@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: agentic-ai-crypto
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+
+#logging:
+#  level:
+#    root: error
+
+server:
+  port: 9292
