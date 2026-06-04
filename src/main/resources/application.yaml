@@ -1,10 +1,16 @@
 spring:
   application:
     name: agentic-ai-crypto
-
+  datasource:
+    url: jdbc:postgresql://localhost:5432/agent_memory
+    username: postgres
+    password: postgres
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
+    vectorstore:
+      pgvector:
+        initialize-schema: true
 
 #logging:
 #  level:

@@ -21,4 +21,14 @@ public class PlanController {
     public String ask(@RequestParam String q) throws Exception {
         return planExecutor.handle(q);
     }
+
+    @GetMapping("/askRetry")
+    public String askRetry(@RequestParam String q) throws Exception {
+        return planExecutor.runAgentRetry(q);
+    }
+
+    @GetMapping("/askReplan")
+    public String askReplan(@RequestParam String q) throws Exception {
+        return planExecutor.runAgentReplan(q);
+    }
 }

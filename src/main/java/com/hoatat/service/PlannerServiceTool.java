@@ -1,5 +1,9 @@
 package com.hoatat.service;
 
+
+import com.hoatat.dto.Plan;
+import com.hoatat.dto.PlanStep;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
@@ -8,28 +12,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class PlannerService {
+public class PlannerServiceTool {
     private final ChatClient chatClient;
-
-    private final MemoryService memoryService;
-
-    public PlannerService(ChatClient.Builder chatClientBuilder, MemoryService memoryService) {
+    public PlannerServiceTool(ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();
-        this.memoryService = memoryService;
     }
 
-    public String createPlan(String userInput) {
-
-        List<Document> memories = memoryService.search(userInput);
-        String memoryContext = memories.stream()
-                .map(Document::getText)
-                .collect(Collectors.joining("\n"));
+    public Plan createPlan(String userInput) {
 
         String prompt = """
         You are an AI planner.
-
-        Conversation memory:
-        %s
 
         Break the user request into steps.
 
@@ -53,16 +45,20 @@ public class PlannerService {
                     {
                       "step": 1,
                       "action": "get_ohlc",
-                      "symbol": "BTC",
-                      "interval": "1h",
-                      "limit": 20
+                      "params":{
+                         "symbol":"BTC",
+                         "interval":"1h",
+                         "limit":50
+                       }
                     },
                     {
                       "step": 2,
                       "action": "analyze_trend",
-                      "symbol": "BTC",
-                      "interval": "1h",
-                      "limit": 20
+                      "params":{
+                         "symbol":"BTC",
+                         "interval":"1h",
+                         "limit":50
+                       }
                     },
                     {
                       "step": 3,
@@ -72,11 +68,36 @@ public class PlannerService {
                 }
 
         User: %s
-        """.formatted(memoryContext, userInput);
+        """.formatted(userInput);
         //""".formatted(memoryService.asText(), userInput);
-        return chatClient.prompt()
+        Plan plan = chatClient.prompt()
                 .user(prompt)
                 .call()
-                .content();
+                .entity(Plan.class);
+
+        validatePlan(plan);
+
+        return plan;
+    }
+
+    private void validatePlan(Plan plan) {
+
+        List<String> validActions = List.of(
+                "get_price",
+                "get_ohlc",
+                "analyze_trend",
+                "compare_price",
+                "final_answer"
+        );
+
+        for (PlanStep step : plan.getSteps()) {
+
+            if (!validActions.contains(step.getAction())) {
+
+                throw new IllegalArgumentException(
+                        "Invalid action: " + step.getAction()
+                );
+            }
+        }
     }
 }
